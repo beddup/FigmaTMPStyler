@@ -46,12 +46,13 @@ In Unity UI development, designers often apply rich styling to text in Figma —
 
 ### Via Unity Package Manager (recommended)
 
-Add this line to your project's `Packages/manifest.json`:
+Add these lines to your project's `Packages/manifest.json`:
 
 ```json
 {
   "dependencies": {
-    "com.beddup.figmatmpstyler": "https://github.com/beddup/figmatmpstyler.git"
+     "com.beddup.figmatmpstyler": "https://github.com/beddup/figmatmpstyler.git", 
+     "com.beddup.figmaclient": "https://github.com/beddup/figmaclient.git"
   }
 }
 ```

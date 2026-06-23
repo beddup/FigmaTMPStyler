@@ -10,7 +10,6 @@
         "url": "https://github.com/beddup"
     },
     "dependencies": {
-        "com.beddup.figmaclient": "https://github.com/beddup/figmaclient.git",
         "com.unity.textmeshpro": "3.0.9"
     },
     "keywords": [
