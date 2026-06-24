@@ -1,7 +1,5 @@
 # Figma TMP Styler
 
-by **Beddup**
-
 One-click apply Figma text styles (outline, shadow, gradient) to Unity TextMeshPro materials — no more manually tweaking shader parameters.
 
 ---
@@ -44,8 +42,6 @@ In Unity UI development, designers often apply rich styling to text in Figma —
 
 ## Installation
 
-### Via Unity Package Manager (recommended)
-
 Add these lines to your project's `Packages/manifest.json`:
 
 ```json
@@ -56,6 +52,8 @@ Add these lines to your project's `Packages/manifest.json`:
   }
 }
 ```
+
+You can also download the source code directly and import it into your Unity project.
 
 ---
 
