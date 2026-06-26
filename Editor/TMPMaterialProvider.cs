@@ -24,11 +24,11 @@ namespace Figma.TMPStyler.Editor
             {
                 TMPMaterialCreator.OutlineInfo outlineInfo = null;
                 TMPMaterialCreator.ShadowInfo shadowInfo = null;
-                var solidColorOutline = node.GetSolidColorOutline();
+                var solidColorOutline = node.GetSolidColorOutlineFill();
                 if (solidColorOutline != null)
                 {
                     outlineInfo = new TMPMaterialCreator.OutlineInfo()
-                        { Width = node.strokeWeight, Color = solidColorOutline.color.ToColor() };
+                        { Width = node.strokeWeight, Color = solidColorOutline.ToColor() };
                 }
 
                 var dropShadow = node.GetDropShadow();
@@ -78,7 +78,7 @@ namespace Figma.TMPStyler.Editor
 
             CheckTextNodeMaterial(node);
 
-            if (node.GetSolidColorOutline() != null || node.GetDropShadow() != null)
+            if (node.GetSolidColorOutlineFill() != null || node.GetDropShadow() != null)
             {
                 string matName = GetOutlineAndDropShadowMaterialName(node, tmpFont);
                 var matInAssetDatabase = FindMaterial(matName);
@@ -115,7 +115,7 @@ namespace Figma.TMPStyler.Editor
         private static void CheckTextNodeMaterial(Node textNode)
         {
             // 不支持多个 outline 
-            if (textNode.GetValidSolidColorOutlines().Count > 1)
+            if (textNode.GetValidSolidColorOutlinesFills().Count > 1)
             {
                 Debug.LogError(
                     $"node {textNode.name}(id:{textNode.id}) has more than one solid color outline, which is not supported");
@@ -156,7 +156,7 @@ namespace Figma.TMPStyler.Editor
         {
             string matName = font.material.name;
             matName = $"{matName} Size_{textNode.style.fontSize}";
-            var solidColorOutline = textNode.GetSolidColorOutline();
+            var solidColorOutline = textNode.GetSolidColorOutlineFill();
             if (solidColorOutline != null)
             {
                 matName = $"{matName} Outline_{textNode.strokeWeight}_{solidColorOutline.color.ToHexColor()}";

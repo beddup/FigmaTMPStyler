@@ -148,7 +148,7 @@ namespace Figma.TMPStyler.Editor
             switch (fills[0].renderType)
             {
                 case Fill.FillRenderType.Color:
-                    tmpText.color = fill.color.ToColor();
+                    tmpText.color = fill.FillColor();
                     break;
                 case Fill.FillRenderType.GRADIENT:
                     var preset = TMPColorGradientResolver.GetTextGradientColorPreset(fill, Generator.MaterialSavePath);
