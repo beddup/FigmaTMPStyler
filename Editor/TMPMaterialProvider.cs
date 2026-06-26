@@ -28,7 +28,7 @@ namespace Figma.TMPStyler.Editor
                 if (solidColorOutline != null)
                 {
                     outlineInfo = new TMPMaterialCreator.OutlineInfo()
-                        { Width = node.strokeWeight, Color = solidColorOutline.ToColor() };
+                        { Width = node.strokeWeight, Color = solidColorOutline.FillColor() };
                 }
 
                 var dropShadow = node.GetDropShadow();
