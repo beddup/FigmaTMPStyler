@@ -154,7 +154,7 @@ namespace Figma.TMPStyler.Editor
 
         private static string GetOutlineAndDropShadowMaterialName(Node textNode, TMP_FontAsset font)
         {
-            string matName = font.material.name;
+            string matName = font.name;
             matName = $"{matName} Size_{textNode.style.fontSize}";
             var solidColorOutline = textNode.GetSolidColorOutlineFill();
             if (solidColorOutline != null)
@@ -173,7 +173,7 @@ namespace Figma.TMPStyler.Editor
 
         private static string GetInnerShadowMaterialName(Node textNode, TMP_FontAsset font)
         {
-            string matName = font.material.name;
+            string matName = font.name;
             var innerShadow = textNode.GetInnerShadow();
             if (innerShadow != null)
             {
