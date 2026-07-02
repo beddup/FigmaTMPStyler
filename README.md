@@ -42,18 +42,13 @@ In Unity UI development, designers often apply rich styling to text in Figma —
 
 ## Installation
 
-Add these lines to your project's `Packages/manifest.json`:
+Install [OpenUPM CLI](https://openupm.com/docs/getting-started.html), then run:
 
-```json
-{
-  "dependencies": {
-     "com.beddup.figmatmpstyler": "https://github.com/beddup/figmatmpstyler.git", 
-     "com.beddup.figmaclient": "https://github.com/beddup/figmaclient.git"
-  }
-}
+```bash
+openupm add com.beddup.figmatmpstyler
 ```
 
-You can also download the source code directly and import it into your Unity project.
+or You can also download the source code directly and import it into your Unity project.
 
 ---
 

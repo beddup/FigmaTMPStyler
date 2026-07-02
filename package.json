@@ -10,7 +10,7 @@
         "url": "https://github.com/beddup/FigmaTMPStyler.git"
     },
     "dependencies": {
-        "com.beddup.figmaclient": "0.0.1",
+        "com.beddup.figmaclient": "0.0.2",
         "com.unity.textmeshpro": "3.0.9"
     },
     "keywords": [
