@@ -64,7 +64,12 @@ You can also download the source code directly and import it into your Unity pro
 1. Log in to Figma and go to **Settings → Account → Personal Access Tokens**
 2. Generate a token and copy it
 
-### Step 2: Configure the component
+### Step 2: Get the Figma text node URL
+
+1. In Figma, select the text layer you want to style
+2. Copy the url in the Web Browser
+
+### Step 3: Configure the component
 
 1. Select the GameObject that will display the styled text
 2. Make sure it already has a `TextMeshProUGUI` component attached
@@ -72,21 +77,19 @@ You can also download the source code directly and import it into your Unity pro
 4. In the Inspector, fill in:
    - **Figma Token** — paste the token from Step 1
    - **Materials Save Folder** — an `Assets`-relative path where generated `.mat` files will be saved (e.g., `Assets/Materials`)
-   - **Parent Link** — paste the Figma URL of the **parent Frame or Group** that contains your text layers
+   - **Node Link** — paste the Figma text node URL from Step 2
 
-> **Why the parent link?** Text nodes in Figma do not have their own shareable URLs. Copy the link of the Frame or Group that holds them. The plugin loads all `TEXT` children under that parent.
+### Step 4: Load and apply styles
 
-### Step 3: Load and apply styles
+Click one of the two buttons:
 
-1. Click the **Load** button — the plugin fetches node data from the Figma API and caches it locally
-2. After loading, all TEXT child nodes appear in the Inspector
-3. For each text node, choose:
-   - **Apply** — reuses an existing cached material if one matches
-   - **Apply (Ignore Cache)** — forces regeneration of the material
-
-### Step 4: Verify the result
+| Button | Behavior                                                                                                         |
+|---|------------------------------------------------------------------------------------------------------------------|
+| **Load And Apply** | Fetches the text node from Figma API, reuses existing materials if available, and applies all styles in one step |
+| **Load And Apply (Ignore Cache)** | Same as above, but forces regeneration of all material assets even if a cached match exists                      |
 
 The plugin automatically:
+- Fetches the text node data from the Figma API and caches it locally
 - Generates TMP material files (`.mat`) in a `Materials` subfolder under your specified save path
 - Sets the text content, font size, alignment, and color / gradient
 - Applies outline, drop shadow, and inner shadow effects
@@ -112,7 +115,7 @@ The plugin computes outline and shadow shader parameters based on values from th
 
 If you later **regenerate a TMP Font Asset** (e.g., by changing the atlas resolution, padding, or sampling point size in the Font Asset Creator), these baked values will differ from those used when the materials were originally created. As a result, previously generated outline and shadow materials will no longer visually match the Figma design.
 
-**After regenerating any TMP Font Asset, re-apply styles to all affected text nodes using `Apply (Ignore Cache)` to regenerate the materials against the updated font parameters.**
+**After regenerating any TMP Font Asset, re-apply styles to all affected text nodes using `Load And Apply (Ignore Cache)` to regenerate the materials against the updated font parameters.**
 
 ---
 

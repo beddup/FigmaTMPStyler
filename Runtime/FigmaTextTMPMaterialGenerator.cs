@@ -18,6 +18,6 @@ namespace FigmaTMPStyler
             get => PlayerPrefs.GetString("material_save_path", string.Empty);
             set => PlayerPrefs.SetString("material_save_path", value);
         }
-        [SerializeField] public string ParentLink; // because there isn't a link for figma text.
+        [SerializeField] public string NodeLink; // Figma text node URL
     }
 }

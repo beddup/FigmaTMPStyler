@@ -11,9 +11,9 @@ namespace FigmaTMPStyler.Editor
     public class FigmaTextMaterialGeneratorInspector :  UnityEditor.Editor
     {
         private FigmaTextTMPMaterialGenerator Generator => (FigmaTextTMPMaterialGenerator)target;
-        private Node ParentNode;
+        private Node TextNode;
         private string FileKey;
-        private string ParentNodeId;
+        private string NodeId;
 
         public override void OnInspectorGUI()
         {
@@ -21,68 +21,62 @@ namespace FigmaTMPStyler.Editor
 
             Generator.MaterialSavePath = EditorGUILayout.TextField("Materials Save Folder", Generator.MaterialSavePath);
 
-            EditorGUILayout.BeginHorizontal();
-            Generator.ParentLink = EditorGUILayout.TextField("Parent Link", Generator.ParentLink);
+            Generator.NodeLink = EditorGUILayout.TextField("Node Link", Generator.NodeLink);
             LoadLocalSavedNode();
-            if (GUILayout.Button("Load", GUILayout.Width(150)))
-            {
-                ParentNode = null;
-                GenerateMats();
-            }
 
+            EditorGUILayout.Space(5);
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Load And Apply"))
+            {
+                TextNode = null;
+                LoadAndApply(false);
+            }
+            if (GUILayout.Button("Load And Apply (Ignore Cache)"))
+            {
+                TextNode = null;
+                LoadAndApply(true);
+            }
             EditorGUILayout.EndHorizontal();
 
-            if (ParentNode?.children != null)
+            if (TextNode != null)
             {
                 EditorGUILayout.Space(5);
-                foreach (var child in ParentNode.children)
+                if (TextNode.type == "TEXT")
                 {
-                    if (child.type == "TEXT")
-                    {
-                        DrawTextNode(child);
-                    }
+                    EditorGUILayout.LabelField($"Node: {TextNode.name}", EditorStyles.boldLabel);
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox($"Node type is '{TextNode.type}', not a TEXT node.", MessageType.Warning);
                 }
             }
         }
 
+        private bool ParseNodeLink()
+        {
+            if (string.IsNullOrEmpty(Generator.NodeLink?.Trim())) return false;
+
+            var parts = Generator.NodeLink.Replace("https://www.figma.com/design/", "").Split('?', '&', '/');
+            FileKey = parts[0];
+            NodeId = parts.First(item => item.Trim().StartsWith("node-id=")).Replace("node-id=", "");
+
+            return !string.IsNullOrEmpty(FileKey) && !string.IsNullOrEmpty(NodeId);
+        }
+
         private void LoadLocalSavedNode()
         {
-            if (string.IsNullOrEmpty(Generator.ParentLink?.Trim())) return;
-            if (ParentNode != null) return;
-            var parts = Generator.ParentLink.Replace("https://www.figma.com/design/", "").Split('?', '&', '/');
-            FileKey = parts[0];
-            ParentNodeId = parts.First(item => item.Trim().StartsWith("node-id=")).Replace("node-id=", "");
+            if (TextNode != null) return;
+            if (!ParseNodeLink()) return;
 
-            if (string.IsNullOrEmpty(FileKey) || string.IsNullOrEmpty(ParentNodeId)) return;
-
-            string localPath = Path.Combine(Application.persistentDataPath, $"{FileKey}_{ParentNodeId}.json");
+            string localPath = Path.Combine(Application.persistentDataPath, $"{FileKey}_{NodeId}.json");
             if (File.Exists(localPath))
             {
                 FigmaNodeParser nodeParser = new FigmaNodeParser();
-                ParentNode = nodeParser.ParseNode<Node>(System.IO.File.ReadAllText(localPath));
+                TextNode = nodeParser.ParseNode<Node>(System.IO.File.ReadAllText(localPath));
             }
         }
 
-        private void DrawTextNode(Node textNode)
-        {
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField($"Node Name: {textNode.name}");
-            if (GUILayout.Button("Apply"))
-            {
-                ApplyMaterials(textNode, false);
-                Repaint();
-            }
-
-            if (GUILayout.Button("Apply(Ignore Cache)"))
-            {
-                ApplyMaterials(textNode, true);
-                Repaint();
-            }
-
-            EditorGUILayout.EndHorizontal();
-        }
-
-        private async void GenerateMats()
+        private async void LoadAndApply(bool ignoreCache)
         {
             if (string.IsNullOrEmpty(Generator.FigmaToken))
             {
@@ -90,17 +84,26 @@ namespace FigmaTMPStyler.Editor
                 return;
             }
 
-            if (string.IsNullOrEmpty(FileKey) || string.IsNullOrEmpty(ParentNodeId))
+            if (!ParseNodeLink())
             {
                 Debug.LogError("Node Link may not be valid, can not get file key or node id from it");
                 return;
             }
 
-            var nodeData = await Client.GetNodeDataAsync(FileKey, ParentNodeId, Generator.FigmaToken);
+            var nodeData = await Client.GetNodeDataAsync(FileKey, NodeId, Generator.FigmaToken);
             if (!string.IsNullOrEmpty(nodeData))
             {
-                string localPath = Path.Combine(Application.persistentDataPath, $"{FileKey}_{ParentNodeId}.json");
+                string localPath = Path.Combine(Application.persistentDataPath, $"{FileKey}_{NodeId}.json");
                 File.WriteAllText(localPath, nodeData);
+
+                FigmaNodeParser nodeParser = new FigmaNodeParser();
+                TextNode = nodeParser.ParseNode<Node>(nodeData);
+
+                if (TextNode != null && TextNode.type == "TEXT")
+                {
+                    ApplyMaterials(TextNode, ignoreCache);
+                }
+
                 Repaint();
             }
         }
@@ -116,7 +119,7 @@ namespace FigmaTMPStyler.Editor
             tmpText.text = textNode.characters;
 
             tmpText.fontMaterial = matInfo.OutlineAndDropShadow ?? (matInfo.InnerShadow ?? tmpText.font.material);
-            
+
 
             // alignment
             var verticalAlignment = style.textAlignVertical;
@@ -160,7 +163,7 @@ namespace FigmaTMPStyler.Editor
                         $"[Figma Importer] do not support fill type {fills[0].renderType} in Text node {textNode.name}({textNode.id}");
                     break;
             }
-            
+
             if (matInfo.OutlineAndDropShadow != null && matInfo.InnerShadow != null) // need to create extra gameobject for innershadow
             {
                 // inner shadow 需要一个独立的材质
