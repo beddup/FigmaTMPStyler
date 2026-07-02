@@ -3,8 +3,8 @@ using UnityEditor;
 using UnityEngine;
 using System.Linq;
 using TMPro;
-using FigmaClient;
-using FigmaTMPStyler;
+using FigmaClient.Editor;
+
 namespace FigmaTMPStyler.Editor
 {
     [CustomEditor(typeof(FigmaTextTMPMaterialGenerator))]

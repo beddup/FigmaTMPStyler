@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEditor;
 using System.IO;
-using FigmaClient;
+using FigmaClient.Editor;
 
 namespace FigmaTMPStyler.Editor
 {
