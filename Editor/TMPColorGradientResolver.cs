@@ -4,7 +4,7 @@ using UnityEditor;
 using System.IO;
 using FigmaClient;
 
-namespace Figma.TMPStyler.Editor
+namespace FigmaTMPStyler.Editor
 {
     public class TMPColorGradientResolver
     {

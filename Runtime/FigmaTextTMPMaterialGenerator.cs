@@ -1,7 +1,7 @@
 using UnityEngine;
 using TMPro;
 
-namespace Figma.TMPStyler
+namespace FigmaTMPStyler
 {
     [RequireComponent(typeof(TextMeshProUGUI))]
     public class FigmaTextTMPMaterialGenerator : MonoBehaviour

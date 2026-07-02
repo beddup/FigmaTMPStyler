@@ -5,7 +5,7 @@ using System.IO;
 using FigmaClient;
 
 
-namespace Figma.TMPStyler.Editor
+namespace FigmaTMPStyler.Editor
 {
     public class TMPMaterialProvider
     {

@@ -4,8 +4,8 @@ using UnityEngine;
 using System.Linq;
 using TMPro;
 using FigmaClient;
-using Figma.TMPStyler;
-namespace Figma.TMPStyler.Editor
+using FigmaTMPStyler;
+namespace FigmaTMPStyler.Editor
 {
     [CustomEditor(typeof(FigmaTextTMPMaterialGenerator))]
     public class FigmaTextMaterialGeneratorInspector :  UnityEditor.Editor

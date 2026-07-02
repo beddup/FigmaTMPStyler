@@ -1,7 +1,7 @@
 using TMPro;
 using UnityEngine;
 
-namespace Figma.TMPStyler.Editor
+namespace FigmaTMPStyler.Editor
 {
     public class TMPMaterialCreator
     {

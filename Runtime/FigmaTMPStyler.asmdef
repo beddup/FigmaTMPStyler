@@ -1,14 +1,11 @@
 {
-    "name": "Figma.TMPStyler.Editor",
-    "rootNamespace": "Figma.TMPStyler.Editor",
+    "name": "FigmaTMPStyler",
+    "rootNamespace": "FigmaTMPStyler",
     "references": [
         "GUID:6055be8ebefd69e48b49212b09b47b2f",
-        "GUID:3a6d07ad1604540e0afae9b800bc4300",
-        "GUID:01016136958af41a09b5250ea7f9b52b"
+        "GUID:3a6d07ad1604540e0afae9b800bc4300"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
