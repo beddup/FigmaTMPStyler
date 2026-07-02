@@ -1,7 +1,7 @@
 {
     "name": "com.beddup.figmatmpstyler",
     "displayName": "Figma TMP Styler",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "unity": "2019.3",
     "description": "One-click apply Figma text styles (outline, shadow, gradient) to Unity TextMeshPro materials",
     "author": {

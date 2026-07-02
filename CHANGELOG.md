@@ -1,4 +1,10 @@
 # Changelog
+## [0.0.5] - 2026-07-02
+### Fixed
+- "Regenerate Material From TMP Component" now correctly parses integer-format material names
+- Fixed material resetting to font default after regeneration (removed AssetDatabase.Refresh race)
+- Material name read via fontSharedMaterial to avoid Unity "(Instance)" suffix
+
 ## [0.0.4] - 2026-07-02
 - Registered on OpenUPM
 
