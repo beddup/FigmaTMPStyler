@@ -155,17 +155,17 @@ namespace Figma.TMPStyler.Editor
         private static string GetOutlineAndDropShadowMaterialName(Node textNode, TMP_FontAsset font)
         {
             string matName = font.name;
-            matName = $"{matName} Size_{textNode.style.fontSize}";
+            matName = $"{matName} Size_{textNode.style.fontSize.ToString("F1")}";
             var solidColorOutline = textNode.GetSolidColorOutlineFill();
             if (solidColorOutline != null)
             {
-                matName = $"{matName} Outline_{textNode.strokeWeight}_{solidColorOutline.color.ToHexColor()}";
+                matName = $"{matName} Outline_{textNode.strokeWeight.ToString("F1")}_{solidColorOutline.color.ToHexColor()}";
             }
 
             var dropShadow = textNode.GetDropShadow();
             if (dropShadow != null)
             {
-                matName = $"{matName} DropShadow_X{dropShadow.offset.x}_Y{dropShadow.offset.y}_Blur{dropShadow.radius}_{dropShadow.color.ToHexColor()}";
+                matName = $"{matName} DropShadow_X{dropShadow.offset.x.ToString("F1")}_Y{dropShadow.offset.y.ToString("F1")}_Blur{dropShadow.radius.ToString("F1")}_{dropShadow.color.ToHexColor()}";
             }
 
             return matName;
@@ -178,7 +178,7 @@ namespace Figma.TMPStyler.Editor
             if (innerShadow != null)
             {
                 matName =
-                    $"{matName} Size_{textNode.style.fontSize} InnerShadow_X{innerShadow.offset.x}_Y{innerShadow.offset.y}_Blur{innerShadow.radius}_{innerShadow.color.ToHexColor()}";
+                    $"{matName} Size_{textNode.style.fontSize.ToString("F1")} InnerShadow_X{innerShadow.offset.x.ToString("F1")}_Y{innerShadow.offset.y.ToString("F1")}_Blur{innerShadow.radius.ToString("F1")}_{innerShadow.color.ToHexColor()}";
             }
 
             return matName;
