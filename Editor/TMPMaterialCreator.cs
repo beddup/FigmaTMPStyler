@@ -72,21 +72,19 @@ namespace Figma.TMPStyler.Editor
             {
                 material.EnableKeyword(shadow.DropShadow ? "UNDERLAY_ON" : "UNDERLAY_INNER");
 
-                // shadow padding 为设置为 font point size 的时候，无 dialte，无 outline 时， underlay 的最大偏移像素
                 float scaleRatioC = font.material.GetFloat(ShaderUtilities.ID_ScaleRatio_C);
                 float maxShadowUnderCurrentFontSize = gradientScale * scaleRatioC * sizeScale;
-                // 考虑 face - dialte 已经占有了一些空间
-                maxShadowUnderCurrentFontSize -= faceDilatePixel;
 
-                // 阴影是从 dilate 的边缘开始外扩的，
-                float shadowOffsetX = shadow.Offset.x == 0 ? 0 : (Mathf.Abs(shadow.Offset.x) + faceDilatePixel);
-                float shadowOffsetY = shadow.Offset.y == 0 ? 0 : (Mathf.Abs(shadow.Offset.y) + faceDilatePixel);
-                shadowOffsetX = -Mathf.Sign(shadow.Offset.x) * shadowOffsetX / maxShadowUnderCurrentFontSize;
-                shadowOffsetY = -Mathf.Sign(shadow.Offset.y) * shadowOffsetY / maxShadowUnderCurrentFontSize;
+                float shadowDilate = faceDilatePixel / maxShadowUnderCurrentFontSize;
+
+                float shadowOffsetX = shadow.Offset.x == 0 ? 0
+                    : -Mathf.Sign(shadow.Offset.x) * Mathf.Abs(shadow.Offset.x) / maxShadowUnderCurrentFontSize;
+                float shadowOffsetY = shadow.Offset.y == 0 ? 0
+                    : -Mathf.Sign(shadow.Offset.y) * Mathf.Abs(shadow.Offset.y) / maxShadowUnderCurrentFontSize;
 
                 float shadowSoftness = shadow.Blur / maxShadowUnderCurrentFontSize;
 
-                material.SetFloat(ShaderUtilities.ID_UnderlayDilate, 0f);
+                material.SetFloat(ShaderUtilities.ID_UnderlayDilate, shadowDilate);
                 material.SetFloat(ShaderUtilities.ID_UnderlayOffsetX, shadowOffsetX);
                 material.SetFloat(ShaderUtilities.ID_UnderlayOffsetY, shadowOffsetY);
                 material.SetFloat(ShaderUtilities.ID_UnderlaySoftness, shadowSoftness);
