@@ -1,4 +1,8 @@
 # Changelog
+## [0.0.6] - 2026-08-14
+### Fixed
+- Find Best Ratio C for shadow effect
+
 ## [0.0.5] - 2026-07-02
 ### Fixed
 - "Regenerate Material From TMP Component" now correctly parses integer-format material names
