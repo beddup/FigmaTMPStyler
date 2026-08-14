@@ -71,38 +71,60 @@ namespace FigmaTMPStyler.Editor
             if (shadow != null && shadow.Valid)
             {
                 material.EnableKeyword(shadow.DropShadow ? "UNDERLAY_ON" : "UNDERLAY_INNER");
+                
+                float inputRatioC = font.material.GetFloat(ShaderUtilities.ID_ScaleRatio_C);
 
-                float scaleRatioC = font.material.GetFloat(ShaderUtilities.ID_ScaleRatio_C);
-                float maxShadowUnderCurrentFontSize = gradientScale * scaleRatioC * sizeScale;
-
-                float shadowDilate = faceDilatePixel / maxShadowUnderCurrentFontSize;
-
-                float shadowOffsetX = shadow.Offset.x == 0 ? 0
-                    : -Mathf.Sign(shadow.Offset.x) * Mathf.Abs(shadow.Offset.x) / maxShadowUnderCurrentFontSize;
-                float shadowOffsetY = shadow.Offset.y == 0 ? 0
-                    : -Mathf.Sign(shadow.Offset.y) * Mathf.Abs(shadow.Offset.y) / maxShadowUnderCurrentFontSize;
-
-                float shadowSoftness = shadow.Blur / maxShadowUnderCurrentFontSize;
-
-                material.SetFloat(ShaderUtilities.ID_UnderlayDilate, shadowDilate);
-                material.SetFloat(ShaderUtilities.ID_UnderlayOffsetX, shadowOffsetX);
-                material.SetFloat(ShaderUtilities.ID_UnderlayOffsetY, shadowOffsetY);
-                material.SetFloat(ShaderUtilities.ID_UnderlaySoftness, shadowSoftness);
+                for (int i = 0; i <= 5; i++)
+                {
+                    DetermineRatioCForShadow(material, shadow, inputRatioC, gradientScale, sizeScale, faceDilatePixel);
+                    ShaderUtilities.UpdateShaderRatios(material);
+                    
+                    float matRatioC = material.GetFloat(ShaderUtilities.ID_ScaleRatio_C);
+                    if (Mathf.Abs(inputRatioC - matRatioC) < 0.01f)
+                    {
+                        break;
+                    }
+                    inputRatioC = matRatioC;
+                }
+                Debug.Log($"final ratio c : {inputRatioC}");
+                
                 material.SetColor(ShaderUtilities.ID_UnderlayColor, shadow.Color);
                 if (!shadow.DropShadow)
                 {
                     material.SetColor(ShaderUtilities.ID_FaceColor, UnityEngine.Color.clear);
                 }
-
-                // todo spread
+                
             }
             else
             {
                 material.DisableKeyword("UNDERLAY_ON");
                 material.DisableKeyword("UNDERLAY_INNER");
             }
-
+            ShaderUtilities.UpdateShaderRatios(material);
             return material;
         }
+
+        private void DetermineRatioCForShadow(Material material, ShadowInfo shadow, float inputRatioC, float gradientScale, float sizeScale, float faceDilatePixel)
+        {
+            // float inputRatioC = font.material.GetFloat(ShaderUtilities.ID_ScaleRatio_C);
+            float maxShadowUnderCurrentFontSize = gradientScale * inputRatioC * sizeScale;
+
+            float shadowDilate = faceDilatePixel / maxShadowUnderCurrentFontSize;
+
+            float shadowOffsetX = shadow.Offset.x == 0 ? 0
+                : -Mathf.Sign(shadow.Offset.x) * Mathf.Abs(shadow.Offset.x) / maxShadowUnderCurrentFontSize;
+            float shadowOffsetY = shadow.Offset.y == 0 ? 0
+                : -Mathf.Sign(shadow.Offset.y) * Mathf.Abs(shadow.Offset.y) / maxShadowUnderCurrentFontSize;
+
+            float shadowSoftness = shadow.Blur / maxShadowUnderCurrentFontSize;
+
+            material.SetFloat(ShaderUtilities.ID_UnderlayDilate, shadowDilate);
+            material.SetFloat(ShaderUtilities.ID_UnderlayOffsetX, shadowOffsetX);
+            material.SetFloat(ShaderUtilities.ID_UnderlayOffsetY, shadowOffsetY);
+            material.SetFloat(ShaderUtilities.ID_UnderlaySoftness, shadowSoftness);
+            // todo spread
+        }
     }
+    
+    
 }
