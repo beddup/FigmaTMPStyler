@@ -10,16 +10,31 @@ namespace FigmaTMPStyler.Editor
     [CustomEditor(typeof(FigmaTextTMPMaterialGenerator))]
     public class FigmaTextMaterialGeneratorInspector :  UnityEditor.Editor
     {
+        private const string FigmaTokenKey = "FigmaTMPStyler.figma_token";
+        private const string MaterialSavePathKey = "FigmaTMPStyler.material_save_path";
+
         private FigmaTextTMPMaterialGenerator Generator => (FigmaTextTMPMaterialGenerator)target;
+        public static string FigmaToken
+        {
+            get => EditorPrefs.GetString(FigmaTokenKey, string.Empty);
+            set => EditorPrefs.SetString(FigmaTokenKey, value);
+        }
+
+        public static string MaterialSavePath
+        {
+            get => EditorPrefs.GetString(MaterialSavePathKey, string.Empty);
+            set => EditorPrefs.SetString(MaterialSavePathKey, value);
+        }
+
         private Node TextNode;
         private string FileKey;
         private string NodeId;
 
         public override void OnInspectorGUI()
         {
-            Generator.FigmaToken = EditorGUILayout.TextField("Figma Token", Generator.FigmaToken);
+            FigmaToken = EditorGUILayout.TextField("Figma Token", FigmaToken);
 
-            Generator.MaterialSavePath = EditorGUILayout.TextField("Materials Save Folder", Generator.MaterialSavePath);
+            MaterialSavePath = EditorGUILayout.TextField("Materials Save Folder", MaterialSavePath);
 
             Generator.NodeLink = EditorGUILayout.TextField("Node Link", Generator.NodeLink);
             LoadLocalSavedNode();
@@ -39,11 +54,6 @@ namespace FigmaTMPStyler.Editor
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space(5);
-            if (GUILayout.Button("Regenerate Material From TMP Component"))
-            {
-                RegenerateMaterialFromTMP();
-            }
-
             if (TextNode != null)
             {
                 EditorGUILayout.Space(5);
@@ -84,7 +94,7 @@ namespace FigmaTMPStyler.Editor
 
         private async void LoadAndApply(bool ignoreCache)
         {
-            if (string.IsNullOrEmpty(Generator.FigmaToken))
+            if (string.IsNullOrEmpty(FigmaToken))
             {
                 Debug.LogError("No Figma Token");
                 return;
@@ -96,7 +106,7 @@ namespace FigmaTMPStyler.Editor
                 return;
             }
 
-            var nodeData = await Client.GetNodeDataAsync(FileKey, NodeId, Generator.FigmaToken);
+            var nodeData = await Client.GetNodeDataAsync(FileKey, NodeId, FigmaToken);
             if (!string.IsNullOrEmpty(nodeData))
             {
                 string localPath = Path.Combine(Application.persistentDataPath, $"{FileKey}_{NodeId}.json");
@@ -114,100 +124,11 @@ namespace FigmaTMPStyler.Editor
             }
         }
 
-        /// Recreate materials from the current TMP component's fontSize while preserving
-        /// the original Figma parameters (stroke, shadow offset, blur, color) parsed from
-        /// the material name. Pure local operation — no Figma API call.
-        private void RegenerateMaterialFromTMP()
-        {
-            var tmpText = Generator.GetComponent<TextMeshProUGUI>();
-            if (tmpText == null)
-            {
-                Debug.LogError("[FigmaTMPStyler] No TextMeshProUGUI component found.");
-                return;
-            }
-
-            var defaultMaterial = tmpText.font != null ? tmpText.font.material : null;
-            float currentFontSize = tmpText.fontSize;
-
-            // --- Refresh main material (outline and/or drop shadow) ---
-            // Use fontSharedMaterial to read the original name (no "(Instance)" suffix).
-            var mainMat = tmpText.fontSharedMaterial;
-
-            if (mainMat != null && mainMat != defaultMaterial)
-            {
-                var parsed = ParsedMaterialParams.Parse(mainMat.name);
-                if (parsed != null && parsed.IsValid)
-                {
-                    var creator = new TMPMaterialCreator();
-                    var newMat = creator.CreateTMPMaterial(tmpText.font, currentFontSize,
-                        parsed.Outline, parsed.Shadow);
-                    string newMatName = parsed.BuildMaterialName(currentFontSize);
-                    SaveAndApplyMaterial(newMat, newMatName, Generator.MaterialSavePath, m => tmpText.fontMaterial = m);
-                }
-                else
-                {
-                    Debug.LogWarning($"[FigmaTMPStyler] Main material '{mainMat.name}' was not created by this plugin, skipping.");
-                }
-            }
-
-            // --- Refresh inner-shadow child material ---
-            var innerChild = Generator.transform.Find($"{Generator.name} innershadow");
-            if (innerChild != null)
-            {
-                var innerTmp = innerChild.GetComponent<TextMeshProUGUI>();
-                if (innerTmp != null)
-                {
-                    var innerDefaultMat = innerTmp.font != null ? innerTmp.font.material : null;
-                    var innerMat = innerTmp.fontSharedMaterial;
-                    if (innerMat != null && innerMat != innerDefaultMat)
-                    {
-                        var parsed = ParsedMaterialParams.Parse(innerMat.name);
-                        if (parsed != null && parsed.HasShadow && !parsed.Shadow.DropShadow)
-                        {
-                            var creator = new TMPMaterialCreator();
-                            var newMat = creator.CreateTMPMaterial(innerTmp.font, currentFontSize,
-                                null, parsed.Shadow);
-                            string newMatName = parsed.BuildMaterialName(currentFontSize);
-                            SaveAndApplyMaterial(newMat, newMatName, Generator.MaterialSavePath, m => innerTmp.fontMaterial = m);
-                        }
-                    }
-                }
-            }
-        }
-
-        private void SaveAndApplyMaterial(Material mat, string matName, string saveFolder, System.Action<Material> apply)
-        {
-            string assetFolder = Path.Combine(saveFolder, "Materials");
-            if (!Directory.Exists(assetFolder))
-            {
-                Directory.CreateDirectory(assetFolder);
-            }
-
-            string assetPath = Path.Combine(assetFolder, $"{matName}.mat");
-
-            // Create the asset. The apply callback is invoked after the asset has been
-            // fully saved so that TMP does not reset to the default material during import.
-            var existing = AssetDatabase.LoadAssetAtPath<Material>(assetPath);
-            if (existing != null)
-            {
-                existing.CopyPropertiesFromMaterial(mat);
-                EditorUtility.SetDirty(existing);
-                AssetDatabase.SaveAssets();
-                apply(existing);
-            }
-            else
-            {
-                AssetDatabase.CreateAsset(mat, assetPath);
-                AssetDatabase.SaveAssets();
-                apply(mat);
-            }
-        }
-
         private void ApplyMaterials(Node textNode, bool ignoreCache)
         {
             var tmpText = Generator.GetComponent<TextMeshProUGUI>();
             var matInfo =
-                TMPMaterialProvider.GetTMPMaterial(textNode, tmpText.font, Generator.MaterialSavePath, ignoreCache);
+                TMPMaterialProvider.GetTMPMaterial(textNode, tmpText.font, MaterialSavePath, ignoreCache);
 
             var style = textNode.style;
             tmpText.fontSize = style.fontSize;
@@ -249,7 +170,7 @@ namespace FigmaTMPStyler.Editor
                     tmpText.color = textNode.opacity * fill.FillColor();
                     break;
                 case Fill.FillRenderType.GRADIENT:
-                    var preset = TMPColorGradientResolver.GetTextGradientColorPreset(fill, Generator.MaterialSavePath);
+                    var preset = TMPColorGradientResolver.GetTextGradientColorPreset(fill, MaterialSavePath);
                     tmpText.enableVertexGradient = true;
                     tmpText.colorGradientPreset = preset;
                     break;

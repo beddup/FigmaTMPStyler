@@ -23,13 +23,14 @@ namespace FigmaTMPStyler.Editor
             public Vector2 Offset;
             public float Blur;
             public float Spread;
+            public float OutlineWidth;
             public UnityEngine.Color Color;
 
             public bool Valid => Offset != Vector2.zero && Color != UnityEngine.Color.clear;
 
             public override string ToString()
             {
-                return $"Drop: {DropShadow}, Offset: {Offset}, Blur: {Blur}, Color: {Color}";
+                return $"Drop: {DropShadow}, Offset: {Offset}, Blur: {Blur}, OutlineWidth: {OutlineWidth}, Color: {Color}";
             }
         }
 
@@ -48,15 +49,11 @@ namespace FigmaTMPStyler.Editor
             
             float maxOutlineUnderCurrentFontSize = scaleRatioA * gradientScale * sizeScale;
             
-
-            float outlineWidthPixel = outline != null && outline.Valid ? outline.Width : 0;
-            float faceDilatePixel = outlineWidthPixel / 2;
-
             Material material = new Material(font.material);
 
             if (outline != null && outline.Valid)
             {
-                float faceDilate = faceDilatePixel / maxOutlineUnderCurrentFontSize;
+                float faceDilate = outline.Width / 2 / maxOutlineUnderCurrentFontSize;
                 float outlineThickness = faceDilate;
                 material.EnableKeyword("OUTLINE_ON");
                 material.SetFloat(ShaderUtilities.ID_FaceDilate, faceDilate);
@@ -79,7 +76,7 @@ namespace FigmaTMPStyler.Editor
                 float bestError = float.MaxValue;
                 for (int i = 0; i < 4; i++)
                 {
-                    DetermineRatioCForShadow(material, shadow, inputRatioC, gradientScale, sizeScale, faceDilatePixel);
+                    DetermineRatioCForShadow(material, shadow, inputRatioC, gradientScale, sizeScale);
                     ShaderUtilities.UpdateShaderRatios(material);
                     
                     float matRatioC = material.GetFloat(ShaderUtilities.ID_ScaleRatio_C);
@@ -94,7 +91,7 @@ namespace FigmaTMPStyler.Editor
                     inputRatioC = matRatioC;
                 }
                 
-                DetermineRatioCForShadow(material, shadow, bestRatioC, gradientScale, sizeScale, faceDilatePixel);
+                DetermineRatioCForShadow(material, shadow, bestRatioC, gradientScale, sizeScale);
                 ShaderUtilities.UpdateShaderRatios(material);
                 
                 material.SetColor(ShaderUtilities.ID_UnderlayColor, shadow.Color);
@@ -112,12 +109,13 @@ namespace FigmaTMPStyler.Editor
             return material;
         }
 
-        private void DetermineRatioCForShadow(Material material, ShadowInfo shadow, float inputRatioC, float gradientScale, float sizeScale, float faceDilatePixel)
+        private void DetermineRatioCForShadow(Material material, ShadowInfo shadow, float inputRatioC, float gradientScale, float sizeScale)
         {
             // float inputRatioC = font.material.GetFloat(ShaderUtilities.ID_ScaleRatio_C);
             float maxShadowUnderCurrentFontSize = gradientScale * inputRatioC * sizeScale;
 
-            float shadowDilate = faceDilatePixel / maxShadowUnderCurrentFontSize;
+            float shadowFaceDilatePixel = shadow.OutlineWidth / 2;
+            float shadowDilate = shadowFaceDilatePixel / maxShadowUnderCurrentFontSize;
 
             float shadowOffsetX = shadow.Offset.x == 0 ? 0
                 : -Mathf.Sign(shadow.Offset.x) * Mathf.Abs(shadow.Offset.x) / maxShadowUnderCurrentFontSize;

@@ -2,6 +2,7 @@ using TMPro;
 using UnityEditor;
 using UnityEngine;
 using System.IO;
+using System.Globalization;
 using FigmaClient.Editor;
 
 
@@ -38,7 +39,8 @@ namespace FigmaTMPStyler.Editor
                     shadowInfo = new TMPMaterialCreator.ShadowInfo()
                     {
                         DropShadow = true, Offset = new Vector2(dropShadow.offset.x, dropShadow.offset.y),
-                        Blur = dropShadow.radius, Spread = dropShadow.spread, Color = dropShadow.color.ToColor()
+                        Blur = dropShadow.radius, Spread = dropShadow.spread, Color = dropShadow.color.ToColor(),
+                        OutlineWidth = solidColorOutline != null ? outlineInfo.Width : 0
                     };
                 }
 
@@ -55,10 +57,12 @@ namespace FigmaTMPStyler.Editor
                 var innerShadow = node.GetInnerShadow();
                 if (innerShadow != null)
                 {
+                    var solidColorOutline = node.GetSolidColorOutlineFill();
                     shadowInfo = new TMPMaterialCreator.ShadowInfo()
                     {
                         DropShadow = false, Offset = new Vector2(innerShadow.offset.x, innerShadow.offset.y),
-                        Blur = innerShadow.radius, Spread = innerShadow.spread, Color = innerShadow.color.ToColor()
+                        Blur = innerShadow.radius, Spread = innerShadow.spread, Color = innerShadow.color.ToColor(),
+                        OutlineWidth = solidColorOutline != null ? node.strokeWeight : 0,
                     };
                     InnerShadow =
                         new TMPMaterialCreator().CreateTMPMaterial(Font, node.style.fontSize, null, shadowInfo);
@@ -155,17 +159,18 @@ namespace FigmaTMPStyler.Editor
         private static string GetOutlineAndDropShadowMaterialName(Node textNode, TMP_FontAsset font)
         {
             string matName = font.name;
-            matName = $"{matName} Size_{textNode.style.fontSize.ToString("F1")}";
+            matName = $"{matName} Size_{FormatFloat(textNode.style.fontSize)}";
             var solidColorOutline = textNode.GetSolidColorOutlineFill();
             if (solidColorOutline != null)
             {
-                matName = $"{matName} Outline_{textNode.strokeWeight.ToString("F1")}_{solidColorOutline.color.ToHexColor()}";
+                matName = $"{matName} Outline_{FormatFloat(textNode.strokeWeight)}_{solidColorOutline.color.ToHexColor()}";
             }
 
             var dropShadow = textNode.GetDropShadow();
             if (dropShadow != null)
             {
-                matName = $"{matName} DropShadow_X{dropShadow.offset.x.ToString("F1")}_Y{dropShadow.offset.y.ToString("F1")}_Blur{dropShadow.radius.ToString("F1")}_{dropShadow.color.ToHexColor()}";
+                float outlineWidth = solidColorOutline != null ? textNode.strokeWeight : 0;
+                matName = $"{matName} DropShadow_OutlineWidth{FormatFloat(outlineWidth)}_X{FormatFloat(dropShadow.offset.x)}_Y{FormatFloat(dropShadow.offset.y)}_Blur{FormatFloat(dropShadow.radius)}_{dropShadow.color.ToHexColor()}";
             }
 
             return matName;
@@ -177,8 +182,8 @@ namespace FigmaTMPStyler.Editor
             var innerShadow = textNode.GetInnerShadow();
             if (innerShadow != null)
             {
-                matName =
-                    $"{matName} Size_{textNode.style.fontSize.ToString("F1")} InnerShadow_X{innerShadow.offset.x.ToString("F1")}_Y{innerShadow.offset.y.ToString("F1")}_Blur{innerShadow.radius.ToString("F1")}_{innerShadow.color.ToHexColor()}";
+                float outlineWidth = textNode.GetSolidColorOutlineFill() != null ? textNode.strokeWeight : 0;
+                matName = $"{matName} Size_{FormatFloat(textNode.style.fontSize)} InnerShadow_OutlineWidth{FormatFloat(outlineWidth)}_X{FormatFloat(innerShadow.offset.x)}_Y{FormatFloat(innerShadow.offset.y)}_Blur{FormatFloat(innerShadow.radius)}_{innerShadow.color.ToHexColor()}";
             }
 
             return matName;
@@ -196,6 +201,11 @@ namespace FigmaTMPStyler.Editor
             AssetDatabase.CreateAsset(mat, Path.Combine(assetFolder, $"{matName}.mat"));
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+        }
+
+        private static string FormatFloat(float value)
+        {
+            return value.ToString("F1", CultureInfo.InvariantCulture);
         }
     }
 }
