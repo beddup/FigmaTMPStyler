@@ -1,4 +1,8 @@
 # Changelog
+## [0.0.7] - 2026-08-14
+### Add
+- Refresh TMP material by its name
+
 ## [0.0.6] - 2026-08-14
 ### Fixed
 - Find Best Ratio C for shadow effect

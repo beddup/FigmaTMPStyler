@@ -10,31 +10,17 @@ namespace FigmaTMPStyler.Editor
     [CustomEditor(typeof(FigmaTextTMPMaterialGenerator))]
     public class FigmaTextMaterialGeneratorInspector :  UnityEditor.Editor
     {
-        private const string FigmaTokenKey = "FigmaTMPStyler.figma_token";
-        private const string MaterialSavePathKey = "FigmaTMPStyler.material_save_path";
-
         private FigmaTextTMPMaterialGenerator Generator => (FigmaTextTMPMaterialGenerator)target;
-        public static string FigmaToken
-        {
-            get => EditorPrefs.GetString(FigmaTokenKey, string.Empty);
-            set => EditorPrefs.SetString(FigmaTokenKey, value);
-        }
-
-        public static string MaterialSavePath
-        {
-            get => EditorPrefs.GetString(MaterialSavePathKey, string.Empty);
-            set => EditorPrefs.SetString(MaterialSavePathKey, value);
-        }
-
+      
         private Node TextNode;
         private string FileKey;
         private string NodeId;
 
         public override void OnInspectorGUI()
         {
-            FigmaToken = EditorGUILayout.TextField("Figma Token", FigmaToken);
+            Generator.FigmaToken = EditorGUILayout.TextField("Figma Token", Generator.FigmaToken);
 
-            MaterialSavePath = EditorGUILayout.TextField("Materials Save Folder", MaterialSavePath);
+            Generator.MaterialSavePath = EditorGUILayout.TextField("Materials Save Folder", Generator.MaterialSavePath);
 
             Generator.NodeLink = EditorGUILayout.TextField("Node Link", Generator.NodeLink);
             LoadLocalSavedNode();
@@ -94,7 +80,7 @@ namespace FigmaTMPStyler.Editor
 
         private async void LoadAndApply(bool ignoreCache)
         {
-            if (string.IsNullOrEmpty(FigmaToken))
+            if (string.IsNullOrEmpty(Generator.FigmaToken))
             {
                 Debug.LogError("No Figma Token");
                 return;
@@ -106,7 +92,7 @@ namespace FigmaTMPStyler.Editor
                 return;
             }
 
-            var nodeData = await Client.GetNodeDataAsync(FileKey, NodeId, FigmaToken);
+            var nodeData = await Client.GetNodeDataAsync(FileKey, NodeId, Generator.FigmaToken);
             if (!string.IsNullOrEmpty(nodeData))
             {
                 string localPath = Path.Combine(Application.persistentDataPath, $"{FileKey}_{NodeId}.json");
@@ -128,7 +114,7 @@ namespace FigmaTMPStyler.Editor
         {
             var tmpText = Generator.GetComponent<TextMeshProUGUI>();
             var matInfo =
-                TMPMaterialProvider.GetTMPMaterial(textNode, tmpText.font, MaterialSavePath, ignoreCache);
+                TMPMaterialProvider.GetTMPMaterial(textNode, tmpText.font, Generator.MaterialSavePath, ignoreCache);
 
             var style = textNode.style;
             tmpText.fontSize = style.fontSize;
@@ -170,7 +156,7 @@ namespace FigmaTMPStyler.Editor
                     tmpText.color = textNode.opacity * fill.FillColor();
                     break;
                 case Fill.FillRenderType.GRADIENT:
-                    var preset = TMPColorGradientResolver.GetTextGradientColorPreset(fill, MaterialSavePath);
+                    var preset = TMPColorGradientResolver.GetTextGradientColorPreset(fill, Generator.MaterialSavePath);
                     tmpText.enableVertexGradient = true;
                     tmpText.colorGradientPreset = preset;
                     break;

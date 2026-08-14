@@ -92,6 +92,20 @@ The plugin automatically:
 
 ---
 
+## Refresh materials by name
+
+If you regenerate a TMP Font Asset, or otherwise need to update existing generated materials without calling the Figma API again, select one or more TMP material assets in the Project window and run:
+
+```text
+Assets -> Figma TMP Styler -> Sync Selected TMP Materials By Name
+```
+
+This command parses each selected material's deterministic name, finds the matching `TMP_FontAsset`, recreates the TMP shader parameters for the recorded font size and effects, and copies the refreshed values back into the selected material asset.
+
+The command is local-only: it does not fetch Figma node data and does not require a Figma token.
+
+---
+
 ## Material caching
 
 The plugin uses a **deterministic naming** strategy:
@@ -102,6 +116,17 @@ The plugin uses a **deterministic naming** strategy:
 
 This means multiple text nodes that share the same styling automatically share the same material asset.
 
+Material names are composed from space-separated sections. Current generated formats include:
+
+```text
+{fontName} Size_{fontSize} Outline_{strokeWeight}_{hexColor}
+{fontName} Size_{fontSize} DropShadow_OutlineWidth{shadowOutlineWidth}_X{offsetX}_Y{offsetY}_Blur{blur}_{hexColor}
+{fontName} Size_{fontSize} Outline_{strokeWeight}_{hexColor} DropShadow_OutlineWidth{shadowOutlineWidth}_X{offsetX}_Y{offsetY}_Blur{blur}_{hexColor}
+{fontName} Size_{fontSize} InnerShadow_OutlineWidth{shadowOutlineWidth}_X{offsetX}_Y{offsetY}_Blur{blur}_{hexColor}
+```
+
+`Outline_{strokeWeight}_{hexColor}` describes the actual TMP outline applied to that material. `OutlineWidth` inside a shadow section is the Figma outline width context used to recalculate TMP underlay dilate for shadow rendering; it is parsed independently from the outline section.
+
 ---
 
 ## Important: regenerating a TMP Font Asset
@@ -110,7 +135,7 @@ The plugin computes outline and shadow shader parameters based on values from th
 
 If you later **regenerate a TMP Font Asset** (e.g., by changing the atlas resolution, padding, or sampling point size in the Font Asset Creator), these baked values will differ from those used when the materials were originally created. As a result, previously generated outline and shadow materials will no longer visually match the Figma design.
 
-**After regenerating any TMP Font Asset, re-apply styles to all affected text nodes using `Load And Apply (Ignore Cache)` to regenerate the materials against the updated font parameters.**
+**After regenerating any TMP Font Asset, either re-apply styles to affected text nodes using `Load And Apply (Ignore Cache)`, or select the generated materials and run `Assets -> Figma TMP Styler -> Sync Selected TMP Materials By Name` to refresh them from their deterministic names.**
 
 ---
 
