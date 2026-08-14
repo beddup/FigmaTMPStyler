@@ -71,29 +71,37 @@ namespace FigmaTMPStyler.Editor
             if (shadow != null && shadow.Valid)
             {
                 material.EnableKeyword(shadow.DropShadow ? "UNDERLAY_ON" : "UNDERLAY_INNER");
-                
+                material.DisableKeyword(shadow.DropShadow ? "UNDERLAY_INNER" : "UNDERLAY_ON");
+
                 float inputRatioC = font.material.GetFloat(ShaderUtilities.ID_ScaleRatio_C);
 
-                for (int i = 0; i <= 5; i++)
+                float bestRatioC = inputRatioC;
+                float bestError = float.MaxValue;
+                for (int i = 0; i < 4; i++)
                 {
                     DetermineRatioCForShadow(material, shadow, inputRatioC, gradientScale, sizeScale, faceDilatePixel);
                     ShaderUtilities.UpdateShaderRatios(material);
                     
                     float matRatioC = material.GetFloat(ShaderUtilities.ID_ScaleRatio_C);
-                    if (Mathf.Abs(inputRatioC - matRatioC) < 0.01f)
+                    float error = Mathf.Abs(1f - matRatioC / Mathf.Max(inputRatioC, 0.0001f));
+                    if (error < bestError)
                     {
-                        break;
+                        bestError = error;
+                        bestRatioC = inputRatioC;
                     }
+                    if (matRatioC <= 0.0001f) break;
+
                     inputRatioC = matRatioC;
                 }
-                Debug.Log($"final ratio c : {inputRatioC}");
+                
+                DetermineRatioCForShadow(material, shadow, bestRatioC, gradientScale, sizeScale, faceDilatePixel);
+                ShaderUtilities.UpdateShaderRatios(material);
                 
                 material.SetColor(ShaderUtilities.ID_UnderlayColor, shadow.Color);
                 if (!shadow.DropShadow)
                 {
                     material.SetColor(ShaderUtilities.ID_FaceColor, UnityEngine.Color.clear);
                 }
-                
             }
             else
             {
