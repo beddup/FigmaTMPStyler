@@ -7,13 +7,14 @@ namespace FigmaTMPStyler.Editor
     {
         public class OutlineInfo
         {
+            public string StrokeAlign; // 当前仅支持 OUTSIDE 类型的 stroke
             public float Width;
             public UnityEngine.Color Color;
             public bool Valid => Width > 0 && Color != UnityEngine.Color.clear;
 
             public override string ToString()
             {
-                return $"Width: {Width}, Color: {Color}";
+                return $"Width: {Width}, Color: {Color}, Align: {StrokeAlign}";
             }
         }
 
@@ -26,7 +27,7 @@ namespace FigmaTMPStyler.Editor
             public float OutlineWidth;
             public UnityEngine.Color Color;
 
-            public bool Valid => Offset != Vector2.zero && Color != UnityEngine.Color.clear;
+            public bool Valid => (Offset != Vector2.zero || Blur != 0) && Color != UnityEngine.Color.clear;
 
             public override string ToString()
             {
@@ -70,13 +71,24 @@ namespace FigmaTMPStyler.Editor
                 material.EnableKeyword(shadow.DropShadow ? "UNDERLAY_ON" : "UNDERLAY_INNER");
                 material.DisableKeyword(shadow.DropShadow ? "UNDERLAY_INNER" : "UNDERLAY_ON");
 
+                if (!material.IsKeywordEnabled("OUTLINE_ON")) // set facedilate to make the cal more accurate
+                {
+                    float faceDilate = shadow.OutlineWidth / 2 / maxOutlineUnderCurrentFontSize;
+                    material.SetFloat(ShaderUtilities.ID_FaceDilate, faceDilate);
+                }
+                
                 float inputRatioC = font.material.GetFloat(ShaderUtilities.ID_ScaleRatio_C);
 
                 float bestRatioC = inputRatioC;
                 float bestError = float.MaxValue;
-                for (int i = 0; i < 4; i++)
+                for (int i = 0; i < 8; i++)
                 {
-                    DetermineRatioCForShadow(material, shadow, inputRatioC, gradientScale, sizeScale);
+                    bool valid = DetermineRatioCForShadow(material, shadow, inputRatioC, gradientScale, sizeScale);
+                    if (!valid)
+                    {
+                        Debug.LogError("Determin Ratio For Shadow Fail");
+                        break;
+                    }
                     ShaderUtilities.UpdateShaderRatios(material);
                     
                     float matRatioC = material.GetFloat(ShaderUtilities.ID_ScaleRatio_C);
@@ -90,7 +102,11 @@ namespace FigmaTMPStyler.Editor
 
                     inputRatioC = matRatioC;
                 }
-                
+
+                if (bestError > 0.1f)
+                {
+                    Debug.LogWarning($"Unstable Ratio C when generate material for {font.name} Size-> {textFontSize}, outline -> {outline}, shadow -> {shadow}");
+                }
                 DetermineRatioCForShadow(material, shadow, bestRatioC, gradientScale, sizeScale);
                 ShaderUtilities.UpdateShaderRatios(material);
                 
@@ -105,11 +121,11 @@ namespace FigmaTMPStyler.Editor
                 material.DisableKeyword("UNDERLAY_ON");
                 material.DisableKeyword("UNDERLAY_INNER");
             }
-            ShaderUtilities.UpdateShaderRatios(material);
+
             return material;
         }
 
-        private void DetermineRatioCForShadow(Material material, ShadowInfo shadow, float inputRatioC, float gradientScale, float sizeScale)
+        private bool DetermineRatioCForShadow(Material material, ShadowInfo shadow, float inputRatioC, float gradientScale, float sizeScale)
         {
             // float inputRatioC = font.material.GetFloat(ShaderUtilities.ID_ScaleRatio_C);
             float maxShadowUnderCurrentFontSize = gradientScale * inputRatioC * sizeScale;
@@ -129,6 +145,13 @@ namespace FigmaTMPStyler.Editor
             material.SetFloat(ShaderUtilities.ID_UnderlayOffsetY, shadowOffsetY);
             material.SetFloat(ShaderUtilities.ID_UnderlaySoftness, shadowSoftness);
             // todo spread
+
+            if (shadowDilate < -1 || shadowDilate > 1) return false;
+            if (shadowOffsetX < -1 || shadowOffsetX > 1) return false;
+            if (shadowOffsetY < -1 || shadowOffsetY > 1) return false;
+            if (shadowSoftness < 0 || shadowSoftness > 1) return false;
+            
+            return true;
         }
     }
     

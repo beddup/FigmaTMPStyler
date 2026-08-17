@@ -15,11 +15,11 @@ namespace FigmaTMPStyler.Editor
             {
                 var startPos = fill.gradientHandlePositions[0];
                 var endPos = fill.gradientHandlePositions[1];
-                bool isVetical = startPos.x == endPos.x && startPos.y != endPos.y;
+                bool vertical = Mathf.Abs(startPos.x - endPos.x) < Mathf.Abs(startPos.y - endPos.y);
                 var startColor = fill.gradientStops[0].color.ToColor();
                 var endColor = fill.gradientStops[1].color.ToColor();
 
-                string presetPrefix = isVetical ? "Vertical" : "Horizontal";
+                string presetPrefix = vertical ? "Vertical" : "Horizontal";
                 string presetName = $"{presetPrefix}_{ColorUtility.ToHtmlStringRGBA(startColor)}-{ColorUtility.ToHtmlStringRGBA(endColor)}";
                 string presetAssetPath = Path.Combine(presetAssetFolder, $"{presetName}.asset");
                 
@@ -28,10 +28,10 @@ namespace FigmaTMPStyler.Editor
                 if (gradientPreset == null)
                 {
                     gradientPreset = ScriptableObject.CreateInstance<TMP_ColorGradient>();
-                    gradientPreset.colorMode = isVetical ? ColorMode.VerticalGradient : ColorMode.HorizontalGradient;
+                    gradientPreset.colorMode = vertical ? ColorMode.VerticalGradient : ColorMode.HorizontalGradient;
                     gradientPreset.topLeft = startColor;
-                    gradientPreset.topRight = isVetical ? startColor : endColor;
-                    gradientPreset.bottomLeft = isVetical ? endColor : startColor;
+                    gradientPreset.topRight = vertical ? startColor : endColor;
+                    gradientPreset.bottomLeft = vertical ? endColor : startColor;
                     gradientPreset.bottomRight = endColor;
 
                     AssetDatabase.CreateAsset(gradientPreset, presetAssetPath);

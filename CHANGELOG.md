@@ -1,4 +1,15 @@
 # Changelog
+## [0.1.0] - 2026-08-17
+### Add
+- Support multiple drop shadows and inner shadows via layered child TextMeshPro objects
+- Stroke alignment handling (only "outside" stroke align supported)
+- Tolerance-based vertical/horizontal gradient direction detection
+
+### Changed
+- Material generation now produces a `Materials` list instead of single outline/drop-shadow and inner-shadow materials
+- Material saving updates existing assets in place
+- More stable ratio-C solver (more iterations, range validation, stability warning)
+
 ## [0.0.7] - 2026-08-14
 ### Add
 - Refresh TMP material by its name

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -113,14 +114,13 @@ namespace FigmaTMPStyler.Editor
         private void ApplyMaterials(Node textNode, bool ignoreCache)
         {
             var tmpText = Generator.GetComponent<TextMeshProUGUI>();
-            var matInfo =
-                TMPMaterialProvider.GetTMPMaterial(textNode, tmpText.font, Generator.MaterialSavePath, ignoreCache);
+            var matInfo = TMPMaterialProvider.GetTMPMaterial(textNode, tmpText.font, Generator.MaterialSavePath, ignoreCache);
 
             var style = textNode.style;
             tmpText.fontSize = style.fontSize;
             tmpText.text = textNode.characters;
 
-            tmpText.fontMaterial = matInfo.OutlineAndDropShadow ?? (matInfo.InnerShadow ?? tmpText.font.material);
+            tmpText.fontMaterial = matInfo.Materials[0];
 
 
             // alignment
@@ -166,18 +166,26 @@ namespace FigmaTMPStyler.Editor
                     break;
             }
 
-            if (matInfo.OutlineAndDropShadow != null && matInfo.InnerShadow != null) // need to create extra gameobject for innershadow
+            List<RectTransform> attachedTexts = new List<RectTransform>();
+            for (int i = 1; i < matInfo.Materials.Count; i++)
             {
-                // inner shadow 需要一个独立的材质
-                var innerShadowGenerator = GameObject.Instantiate(Generator, Generator.transform);
-                var innerShadowText = innerShadowGenerator.GetComponent<TextMeshProUGUI>();
-                innerShadowText.gameObject.name = $"{Generator.name} innershadow";
-                innerShadowText.fontMaterial = matInfo.InnerShadow;
-                (innerShadowText.transform as RectTransform).anchorMin = Vector2.zero;
-                (innerShadowText.transform as RectTransform).anchorMax = Vector2.one;
-                (innerShadowText.transform as RectTransform).offsetMin = Vector2.zero;
-                (innerShadowText.transform as RectTransform).offsetMax = Vector2.zero;
-                DestroyImmediate(innerShadowGenerator);
+                var generator = GameObject.Instantiate(Generator);
+                var text = generator.GetComponent<TextMeshProUGUI>();
+                text.gameObject.name = $"{Generator.name} figma_attached";
+                text.fontMaterial = matInfo.Materials[i];
+                DestroyImmediate(generator);
+                attachedTexts.Add(text.transform as RectTransform);
+            }
+
+            foreach (var text in attachedTexts)
+            {
+                text.SetParent(Generator.transform);
+                text.localScale = Vector3.one;
+                text.position = Generator.transform.position;
+                text.anchorMin = Vector2.zero;
+                text.anchorMax = Vector2.one;
+                text.offsetMin = Vector2.zero;
+                text.offsetMax = Vector2.zero;
             }
         }
     }
