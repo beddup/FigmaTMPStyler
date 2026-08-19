@@ -47,9 +47,9 @@ namespace FigmaTMPStyler.Editor
             float gradientScale = font.material.GetFloat(ShaderUtilities.ID_GradientScale);
 
             float sizeScale = textFontSize / fontPointSize;
-            
+
             float maxOutlineUnderCurrentFontSize = scaleRatioA * gradientScale * sizeScale;
-            
+
             Material material = new Material(font.material);
 
             if (outline != null && outline.Valid)
@@ -60,6 +60,11 @@ namespace FigmaTMPStyler.Editor
                 material.SetFloat(ShaderUtilities.ID_FaceDilate, faceDilate);
                 material.SetFloat(ShaderUtilities.ID_OutlineWidth, outlineThickness);
                 material.SetColor(ShaderUtilities.ID_OutlineColor, outline.Color);
+
+                if (faceDilate > 1 || outlineThickness > 1)
+                {
+                    Debug.LogError($"Can not Create CORRECT Material outline effect (faceDilate->{faceDilate}, outlineThickness->{outlineThickness}) for outline->{outline}");
+                }
             }
             else
             {
@@ -76,45 +81,27 @@ namespace FigmaTMPStyler.Editor
                     float faceDilate = shadow.OutlineWidth / 2 / maxOutlineUnderCurrentFontSize;
                     material.SetFloat(ShaderUtilities.ID_FaceDilate, faceDilate);
                 }
-                
-                float inputRatioC = font.material.GetFloat(ShaderUtilities.ID_ScaleRatio_C);
 
+                ShaderUtilities.UpdateShaderRatios(material);
+                float inputRatioC = material.GetFloat(ShaderUtilities.ID_ScaleRatio_C);
+                float bestDiff = float.MaxValue;
                 float bestRatioC = inputRatioC;
-                float bestError = float.MaxValue;
                 for (int i = 0; i < 8; i++)
                 {
-                    bool valid = DetermineRatioCForShadow(material, shadow, inputRatioC, gradientScale, sizeScale);
-                    if (!valid)
-                    {
-                        Debug.LogError("Determin Ratio For Shadow Fail");
-                        break;
-                    }
+                    SetShadowValues(material, shadow, inputRatioC, gradientScale, sizeScale);
                     ShaderUtilities.UpdateShaderRatios(material);
-                    
-                    float matRatioC = material.GetFloat(ShaderUtilities.ID_ScaleRatio_C);
-                    float error = Mathf.Abs(1f - matRatioC / Mathf.Max(inputRatioC, 0.0001f));
-                    if (error < bestError)
+                    float resultRatioC = material.GetFloat(ShaderUtilities.ID_ScaleRatio_C);
+                    float diff = Mathf.Abs((resultRatioC - inputRatioC) / inputRatioC);
+                    if (diff < bestDiff)
                     {
-                        bestError = error;
-                        bestRatioC = inputRatioC;
+                        bestRatioC = resultRatioC;
+                        bestDiff = diff;
                     }
-                    if (matRatioC <= 0.0001f) break;
-
-                    inputRatioC = matRatioC;
+                    inputRatioC = resultRatioC;
+                    if (diff < 0.05 || inputRatioC < 0.001f) break;
                 }
-
-                if (bestError > 0.1f)
-                {
-                    Debug.LogWarning($"Unstable Ratio C when generate material for {font.name} Size-> {textFontSize}, outline -> {outline}, shadow -> {shadow}");
-                }
-                DetermineRatioCForShadow(material, shadow, bestRatioC, gradientScale, sizeScale);
+                SetShadowValues(material, shadow, bestRatioC, gradientScale, sizeScale);
                 ShaderUtilities.UpdateShaderRatios(material);
-                
-                material.SetColor(ShaderUtilities.ID_UnderlayColor, shadow.Color);
-                if (!shadow.DropShadow)
-                {
-                    material.SetColor(ShaderUtilities.ID_FaceColor, UnityEngine.Color.clear);
-                }
             }
             else
             {
@@ -125,35 +112,54 @@ namespace FigmaTMPStyler.Editor
             return material;
         }
 
-        private bool DetermineRatioCForShadow(Material material, ShadowInfo shadow, float inputRatioC, float gradientScale, float sizeScale)
+        private void SetShadowValues(Material material, ShadowInfo shadow, float inputRatioC, float gradientScale, float sizeScale)
         {
-            // float inputRatioC = font.material.GetFloat(ShaderUtilities.ID_ScaleRatio_C);
             float maxShadowUnderCurrentFontSize = gradientScale * inputRatioC * sizeScale;
+            // drop 和 inner 不一样
+            Vector2 offset = shadow.Offset;
 
-            float shadowFaceDilatePixel = shadow.OutlineWidth / 2;
-            float shadowDilate = shadowFaceDilatePixel / maxShadowUnderCurrentFontSize;
+            float faceDilate = shadow.OutlineWidth / 2;
+            if (shadow.DropShadow)
+            {
+                // 在  Drop 模式下，设置 ID_UnderlayDilate， 可以使阴影的起点与 figma 保持一致，还原更精确
+                material.SetFloat(ShaderUtilities.ID_UnderlayDilate, faceDilate / maxShadowUnderCurrentFontSize); // 将 shadow 本体继续膨胀，以便与figma 对齐
+            }
+            else
+            {
+                // 在 inner 模式下，设置 ID_UnderlayDilate 无法改变阴影起点，阴影的起点在 facedilate 边缘上 
+                material.SetFloat(ShaderUtilities.ID_UnderlayDilate, 0); 
+                float magnitude = offset.magnitude;
+                if (magnitude > 0.0001f)
+                {
+                    float targetMagnitude = Mathf.Max(0f, magnitude - faceDilate);
+                    offset = offset * (targetMagnitude / magnitude);
+                }
+            }
 
-            float shadowOffsetX = shadow.Offset.x == 0 ? 0
-                : -Mathf.Sign(shadow.Offset.x) * Mathf.Abs(shadow.Offset.x) / maxShadowUnderCurrentFontSize;
-            float shadowOffsetY = shadow.Offset.y == 0 ? 0
-                : -Mathf.Sign(shadow.Offset.y) * Mathf.Abs(shadow.Offset.y) / maxShadowUnderCurrentFontSize;
+            float shadowOffsetX = -Mathf.Sign(offset.x) * Mathf.Abs(offset.x) / maxShadowUnderCurrentFontSize;
+            float shadowOffsetY = -Mathf.Sign(offset.y) * Mathf.Abs(offset.y) / maxShadowUnderCurrentFontSize;
 
+            // figma 的 blur 是高斯卷积，tmp 的 softness 是 SDF 边缘的线性加宽，两者原理不同；
+            // 这里只能对齐「宽度」（糊开的像素量），无法精确还原 figma 的模糊剖面。
             float shadowSoftness = shadow.Blur / maxShadowUnderCurrentFontSize;
 
-            material.SetFloat(ShaderUtilities.ID_UnderlayDilate, shadowDilate);
             material.SetFloat(ShaderUtilities.ID_UnderlayOffsetX, shadowOffsetX);
             material.SetFloat(ShaderUtilities.ID_UnderlayOffsetY, shadowOffsetY);
             material.SetFloat(ShaderUtilities.ID_UnderlaySoftness, shadowSoftness);
-            // todo spread
-
-            if (shadowDilate < -1 || shadowDilate > 1) return false;
-            if (shadowOffsetX < -1 || shadowOffsetX > 1) return false;
-            if (shadowOffsetY < -1 || shadowOffsetY > 1) return false;
-            if (shadowSoftness < 0 || shadowSoftness > 1) return false;
             
-            return true;
+            material.SetColor(ShaderUtilities.ID_UnderlayColor, shadow.Color);
+            if (!shadow.DropShadow)
+            {
+                material.SetColor(ShaderUtilities.ID_FaceColor, UnityEngine.Color.clear);
+            }
+
+            if (Mathf.Abs(shadowOffsetX) > 1 || Mathf.Abs(shadowOffsetY) > 1 || shadowSoftness > 1 ||
+                shadowSoftness < 0)
+            {
+                Debug.LogError($"Can not Create CORRECT Material shadow effect (offset->({shadowOffsetX},{shadowOffsetY}), softness->{shadowSoftness}) for shadow->{shadow}, You may need adjust TMP Font");
+            }
         }
     }
-    
-    
+
+
 }

@@ -1,4 +1,17 @@
 # Changelog
+## [0.1.1] - 2026-08-19
+
+### Changed
+- Drop shadow expands the underlay via `_UnderlayDilate` so its origin aligns with the outline outer edge
+- Inner shadow compensates the face dilate by directionally adjusting the offset (since `_UnderlayDilate` cannot shift the inner shadow origin)
+- Ratio C solver now converges monotonically with a stable break condition (removed the "Unstable Ratio C" warning)
+
+### Fixed
+- Shadow offset compensation no longer over/under-compensates diagonal offsets
+
+### Added
+- Error logs when outline or shadow values exceed the shader range
+
 ## [0.1.0] - 2026-08-17
 ### Add
 - Support multiple drop shadows and inner shadows via layered child TextMeshPro objects
