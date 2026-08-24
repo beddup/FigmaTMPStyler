@@ -1,4 +1,12 @@
 # Changelog
+## [0.1.2] - 2026-08-24
+
+### Added
+- `Assets → Figma TMP Styler → Check Auto-generated TMP GameObject Under Selection` menu command that scans selected prefabs/folders and fixes auto-generated `figma_attached` child TMP overlays (snaps their RectTransform to fully overlap the parent and syncs their text)
+
+### Fixed
+- Applying a Figma font size now also sets `fontSizeMax`, so auto-sizing text honors the Figma size
+
 ## [0.1.1] - 2026-08-19
 
 ### Changed
